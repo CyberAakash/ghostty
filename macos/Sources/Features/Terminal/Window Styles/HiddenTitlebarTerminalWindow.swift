@@ -2,6 +2,7 @@ import AppKit
 
 class HiddenTitlebarTerminalWindow: TerminalWindow {
     // No titlebar, we don't support accessories.
+    override var supportsSidebarChrome: Bool { false }
     override var supportsUpdateAccessory: Bool { false }
 
     override func awakeFromNib() {

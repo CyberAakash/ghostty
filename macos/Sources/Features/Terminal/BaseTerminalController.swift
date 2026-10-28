@@ -915,6 +915,7 @@ class BaseTerminalController: NSWindowController,
 
     private func applyTitleToWindow() {
         guard let window else { return }
+        defer { TabSidebarEvents.requestRefresh() }
 
         if let titleOverride {
             window.title = computeTitle(
@@ -927,6 +928,7 @@ class BaseTerminalController: NSWindowController,
     }
 
     func pwdDidChange(to: URL?) {
+        TabSidebarEvents.requestRefresh()
         guard let window else { return }
 
         if derivedConfig.macosTitlebarProxyIcon == .visible {

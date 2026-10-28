@@ -80,7 +80,27 @@ class TerminalWindow: NSWindow {
         }
     }
 
+    /// Whether this window style gets the fork's custom top bar instead of the macOS title bar.
+    var supportsSidebarChrome: Bool { true }
+
+    /// Extends the content under the title bar and hides its title, so the container's top bar can
+    /// stand in for it. The empty compact toolbar makes the title bar 38 pt tall, which centers the
+    /// traffic lights in that bar.
+    private func prepareSidebarChrome() {
+        guard supportsSidebarChrome, styleMask.contains(.titled) else { return }
+        styleMask.insert(.fullSizeContentView)
+        titleVisibility = .hidden
+        titlebarAppearsTransparent = true
+        if toolbar == nil {
+            let toolbar = NSToolbar(identifier: "TabSidebarChrome")
+            toolbar.showsBaselineSeparator = false
+            self.toolbar = toolbar
+            toolbarStyle = .unifiedCompact
+        }
+    }
+
     override func awakeFromNib() {
+        defer { prepareSidebarChrome() }
         // Notify that this terminal window has loaded
         NotificationCenter.default.post(name: Self.terminalDidAwake, object: self)
 
@@ -261,6 +281,18 @@ class TerminalWindow: NSWindow {
         if isTabBar(childViewController) {
             childViewController.identifier = Self.tabBarIdentifier
             tabBarDidAppear()
+
+            // The tab sidebar replaces the native tab bar. Hiding the accessory (rather than
+            // toggling the bar) also gives its height back to the content.
+            childViewController.isHidden = TabSidebarSettings.shared.isVisible
+        }
+    }
+
+    /// Shows or hides the native tab bar to match the sidebar. Call after the setting changes.
+    func syncNativeTabBarWithSidebar() {
+        let hidden = TabSidebarSettings.shared.isVisible
+        for accessory in titlebarAccessoryViewControllers where isTabBar(accessory) {
+            accessory.isHidden = hidden
         }
     }
 

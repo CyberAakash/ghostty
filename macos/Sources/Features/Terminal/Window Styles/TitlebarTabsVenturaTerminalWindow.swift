@@ -2,6 +2,7 @@ import Cocoa
 
 /// Titlebar tabs for macOS 13 to 15.
 class TitlebarTabsVenturaTerminalWindow: TerminalWindow {
+    override var supportsSidebarChrome: Bool { false }
     /// Titlebar tabs can't support the update accessory because of the way we layout
     /// the native tabs back into the menu bar.
     override var supportsUpdateAccessory: Bool { false }

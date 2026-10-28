@@ -15,6 +15,9 @@ extension TerminalRestorableState {
         let effectiveFullscreenMode: FullscreenMode?
         let tabColor: TerminalTabColor?
         let titleOverride: String?
+
+        // MARK: - Tab sidebar (fork)
+        let sidebarMeta: TabSidebarMeta?
     }
 }
 
@@ -26,6 +29,7 @@ extension TerminalRestorableState.InternalState where ViewType == Ghostty.Surfac
             effectiveFullscreenMode: controller.fullscreenStyle?.fullscreenMode,
             tabColor: (controller.window as? TerminalWindow)?.tabColor,
             titleOverride: controller.titleOverride,
+            sidebarMeta: controller.sidebarMeta,
         )
     }
 }

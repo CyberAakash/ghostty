@@ -51,6 +51,15 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     /// re-showing a tab/window that was already closed.
     private var pendingInitialPresentation: DispatchWorkItem?
 
+    /// Sidebar pin / group state for this tab. Saved with window restoration.
+    var sidebarMeta = TabSidebarMeta() {
+        didSet {
+            guard sidebarMeta != oldValue else { return }
+            window?.invalidateRestorableState()
+            TabSidebarEvents.requestRefresh()
+        }
+    }
+
     /// This is set to false by init if the window managed by this controller should not be restorable.
     /// For example, terminals executing custom scripts are not restorable.
     private var restorable: Bool = true
@@ -444,6 +453,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         // Create a new window and add it to the parent
         let controller = TerminalController.init(ghostty, withBaseConfig: baseConfig)
         controller.isBackgroundOpaque = parentController.isBackgroundOpaque
+        // The tab sidebar: a new tab opens in its neighbor's group (and is pinned if that one is).
+        controller.sidebarMeta = parentController.sidebarMeta.inheritedByNewTab
         guard let window = controller.window else { return controller }
 
         // If the parent is miniaturized, then macOS exhibits really strange behaviors
@@ -593,6 +604,9 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
     /// changes, when a window is closed, and when tabs are reordered
     /// with the mouse.
     func relabelTabs() {
+        // Tabs were added, removed, reordered or selected.
+        TabSidebarEvents.requestRefresh()
+
         // We only listen for frame changes if we have more than 1 window,
         // otherwise the accessory view doesn't matter.
         tabListenForFrame = window?.tabbedWindows?.count ?? 0 > 1
@@ -1027,6 +1041,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
         let tabIndex: Int?
         weak var tabGroup: NSWindowTabGroup?
         let tabColor: TerminalTabColor
+        let sidebarMeta: TabSidebarMeta
     }
 
     convenience init(_ ghostty: Ghostty.App, with undoState: UndoState) {
@@ -1039,6 +1054,7 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
             if let terminalWindow = window as? TerminalWindow {
                 terminalWindow.tabColor = undoState.tabColor
             }
+            sidebarMeta = undoState.sidebarMeta
 
             // If we have a tab group and index, restore the tab to its original position
             if let tabGroup = undoState.tabGroup,
@@ -1082,7 +1098,8 @@ class TerminalController: BaseTerminalController, TabGroupCloseCoordinator.Contr
             focusedSurface: focusedSurface?.id,
             tabIndex: window.tabGroup?.windows.firstIndex(of: window),
             tabGroup: window.tabGroup,
-            tabColor: (window as? TerminalWindow)?.tabColor ?? .none)
+            tabColor: (window as? TerminalWindow)?.tabColor ?? .none,
+            sidebarMeta: sidebarMeta)
     }
 
     // MARK: - NSWindowController

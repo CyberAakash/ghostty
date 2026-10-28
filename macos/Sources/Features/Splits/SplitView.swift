@@ -24,8 +24,19 @@ struct SplitView<L: View, R: View>: View {
     /// Called when the divider is double-tapped to equalize splits.
     let onEqualize: () -> Void
 
-    /// The minimum size (in points) of a split
-    let minSize: CGFloat = 10
+    /// The minimum size (in points) of one side of a split. A pane only goes below this by being
+    /// zoomed away, never by dragging the divider (fork: matches Warp's pane minimums).
+    private static var minWidth: CGFloat { 220 }
+    private static var minHeight: CGFloat { 120 }
+
+    /// The minimum for this split's axis, never more than half of the space so a small window
+    /// still divides.
+    private func minSize(for size: CGSize) -> CGFloat {
+        switch direction {
+        case .horizontal: return min(Self.minWidth, size.width / 2)
+        case .vertical: return min(Self.minHeight, size.height / 2)
+        }
+    }
 
     /// The current fractional width of the split view. 0.5 means L/R are equally sized, for example.
     @Binding var split: CGFloat
@@ -92,10 +103,12 @@ struct SplitView<L: View, R: View>: View {
             .onChanged { gesture in
                 switch direction {
                 case .horizontal:
+                    let minSize = minSize(for: size)
                     let new = min(max(minSize, gesture.location.x), size.width - minSize)
                     split = new / size.width
 
                 case .vertical:
+                    let minSize = minSize(for: size)
                     let new = min(max(minSize, gesture.location.y), size.height - minSize)
                     split = new / size.height
                 }

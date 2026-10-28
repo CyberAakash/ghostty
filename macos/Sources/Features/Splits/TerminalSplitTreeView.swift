@@ -113,6 +113,7 @@ private struct TerminalSplitLeaf: View {
                         ))
                 }
             }
+            .overlay { TabSidebarPaneControls(surfaceView: surfaceView, isSplit: isSplit) }
             .overlay {
                 if !isSelfDragging, case .dropping(let zone) = dropState {
                     zone.overlay(in: geometry)
